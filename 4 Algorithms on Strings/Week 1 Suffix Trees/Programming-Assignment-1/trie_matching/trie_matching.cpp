@@ -37,11 +37,70 @@ int letterToIndex (char letter)
 	}
 }
 
+void build_trie (const vector <string>& patterns, vector<Node> &t)
+{	
+	for (int i = 0; i < patterns.size(); i++)
+	{
+		int x = 0;
+		for (int j = 0; j < patterns[i].size(); j++)
+		{
+			int index = letterToIndex(patterns[i][j]);
+			if (x >= t.size())
+			{
+				t.resize(x + 1);
+			}
+			if (t[x].next[index] != -1)
+			{
+				x = t[x].next[index];
+			}
+			else
+			{
+				t[x].next[index] = t.size();
+				x = t[x].next[index];
+				t.resize(x + 1);
+			}
+		}
+	}
+}
+
 vector <int> solve (const string& text, int n, const vector <string>& patterns)
 {
 	vector <int> result;
-
 	// write your code here
+	vector<Node> t;
+	build_trie(patterns, t);
+
+	for (int i = 0; i < text.size(); i++)
+	{
+		int index = letterToIndex(text[i]);
+		int x = 0;
+		if (t[x].next[index] != -1)
+		{
+			bool found = true;
+			for (int j = i; !t[x].isLeaf() ; j++)
+			{
+				if (j >= text.size())
+				{
+					found = false;
+					break;
+				}
+				index = letterToIndex(text[j]);
+				if (t[x].next[index] != -1)
+				{
+					x = t[x].next[index];
+				}
+				else
+				{
+					found = false;
+					break;
+				}
+			}
+			if (found)
+			{
+				result.push_back(i);
+			}
+		}
+	}
 
 	return result;
 }
@@ -49,7 +108,7 @@ vector <int> solve (const string& text, int n, const vector <string>& patterns)
 int main (void)
 {
 	string t;
-	cin >> text;
+	cin >> t;
 
 	int n;
 	cin >> n;
