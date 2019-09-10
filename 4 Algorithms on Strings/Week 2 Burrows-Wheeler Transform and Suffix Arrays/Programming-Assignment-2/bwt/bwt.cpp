@@ -11,8 +11,18 @@ using std::vector;
 
 string BWT(const string& text) {
   string result = "";
-
-  // write your code here
+  vector<string> m(text.size());
+  string newtext = text + text;
+  
+  for (int i = 0; i < m.size(); i++){
+      m[i] = newtext.substr(i, i + text.size());
+  }
+  
+  sort(m.begin(), m.end());
+  
+  for (int i = 0; i < m.size(); i++){
+      result += m[i].substr(text.size() - 1 , 1);
+  }
 
   return result;
 }
