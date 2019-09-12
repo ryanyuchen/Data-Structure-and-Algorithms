@@ -1,7 +1,6 @@
 # python3
 import sys
 
-
 def build_suffix_array(text):
   """
   Build suffix array of the string text and
@@ -12,6 +11,16 @@ def build_suffix_array(text):
   """
   result = []
   # Implement this function yourself
+  suffix = []
+  
+  for i in range(len(text)):
+      suffix.append((i, text[i:]))
+      
+  suffix = sorted(suffix, key=lambda x: x[1])
+  
+  for i in range(len(suffix)):
+      result.append(suffix[i][0])
+      
   return result
 
 

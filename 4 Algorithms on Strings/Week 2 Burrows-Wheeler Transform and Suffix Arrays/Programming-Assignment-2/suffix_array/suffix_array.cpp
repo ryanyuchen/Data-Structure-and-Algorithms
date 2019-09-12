@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <utility>
 
 using std::cin;
@@ -20,6 +21,18 @@ using std::vector;
 vector<int> BuildSuffixArray(const string& text) {
   vector<int> result;
   // Implement this function yourself
+  vector<pair<string, int>> suffix(text.size());
+  
+  for (int i = 0; i < text.size(); i++){
+      suffix[i] = make_pair(text.substr(i), i);
+  }
+  
+  sort(suffix.begin(), suffix.end());
+  
+  for (int i = 0; i < suffix.size(); i++){
+      result.push_back(suffix[i].second);
+  }
+  
   return result;
 }
 

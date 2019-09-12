@@ -11,6 +11,9 @@ using std::istringstream;
 using std::map;
 using std::string;
 using std::vector;
+using std::cout;
+using std::endl;
+using namespace std;
 
 // Preprocess the Burrows-Wheeler Transform bwt of some text
 // and compute as a result:
@@ -24,6 +27,26 @@ void PreprocessBWT(const string& bwt,
                    map<char, int>& starts, 
                    map<char, vector<int> >& occ_count_before) {
   // Implement this function yourself
+  string LastCol = bwt;
+  string FirstCol = bwt;
+  sort(FirstCol.begin(), FirstCol.end());
+  vector<int> counter(bwt.size(), 0);
+  
+  for (int i = 0; i < bwt.size(); i++){
+      starts[bwt[i]]++;
+      occ_count_before[bwt[i]] = counter;
+  }
+  for (auto& pair: starts){
+      pair.second = FirstCol.find(pair.first);
+      for (int i = 1; i < bwt.size() + 1; i++){
+          if (bwt[i - 1] == pair.first){
+              occ_count_before[pair.first][i] = occ_count_before[pair.first][i - 1] + 1;
+          }
+          else{
+              occ_count_before[pair.first][i] = occ_count_before[pair.first][i - 1];
+          }
+      }
+  }
 }
 
 // Compute the number of occurrences of string pattern in the text
@@ -34,7 +57,25 @@ int CountOccurrences(const string& pattern,
                      const map<char, int>& starts, 
                      const map<char, vector<int> >& occ_count_before) {
   // Implement this function yourself
-  return 0;
+  string pattern_cp = pattern;
+  int top = 0;
+  int bottom = bwt.size() - 1;
+  while (top <= bottom) {
+    if (!pattern_cp.empty()) {
+      char symbol = pattern_cp.back();
+      pattern_cp.pop_back();
+      if (occ_count_before.find(symbol)->second[bottom + 1] > occ_count_before.find(symbol)->second[top]) {
+        top = starts.find(symbol)->second + occ_count_before.find(symbol)->second[top];
+        bottom = starts.find(symbol)->second + occ_count_before.find(symbol)->second[bottom + 1] - 1;
+      } 
+      else {
+        return 0;
+      }
+    } 
+    else {
+      return bottom - top + 1;
+    }
+  }
 }
      
 

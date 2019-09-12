@@ -14,7 +14,22 @@ def PreprocessBWT(bwt):
         from position 0 to position P inclusive.
   """
   # Implement this function yourself
-  pass
+  LastCol = bwt
+  FirstCol = ''.join(sorted(LastCol))
+  CharSet = set(FirstCol)
+  starts = {x: FirstCol.find(x) for x in CharSet}
+          
+  occ_count_before = {}
+  for char in CharSet:
+      counter = [0] * (len(LastCol) + 1)
+      for i in range(1, len(LastCol) + 1):
+          if bwt[i - 1] == char:
+              counter[i] = counter[i - 1] + 1
+          else:
+              counter[i] = counter[i - 1]
+      occ_count_before[char] = counter
+  
+  return starts, occ_count_before
 
 
 def CountOccurrences(pattern, bwt, starts, occ_counts_before):
@@ -24,9 +39,21 @@ def CountOccurrences(pattern, bwt, starts, occ_counts_before):
   information we get from the preprocessing stage - starts and occ_counts_before.
   """
   # Implement this function yourself
-  return 0
-     
-
+  top = 0
+  bottom = len(bwt) - 1
+  
+  while top <= bottom:
+      if pattern:
+          symbol = pattern[-1]
+          pattern = pattern[:-1]
+          if symbol in bwt[top: bottom + 1]:
+              first_occurence = starts[symbol]
+              top = first_occurence + occ_counts_before[symbol][top]
+              bottom = first_occurence + occ_counts_before[symbol][bottom + 1] - 1
+          else:
+              return 0
+      else:
+          return bottom - top + 1
 
 if __name__ == '__main__':
   bwt = sys.stdin.readline().strip()
