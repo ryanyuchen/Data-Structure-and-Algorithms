@@ -1,51 +1,125 @@
-#include <cstdio>
 #include <iostream>
+#include <cstdio>
 #include <string>
 #include <vector>
+#include <set>
+#include <algorithm>
+#include <cmath>
 
-using std::cin;
-using std::string;
-using std::vector;
+using namespace std;
+const int maxn = 2 * 1e5 + 5;
+const int alphabet = 256;
+vector<int> order(maxn), classes(maxn);
+set<int> occurrences;
+string s, pat;
+int n, m;
 
-vector<int> BuildSuffixArray(const string& text) {
-  vector<int> order;
-
-  // write your code here
-
+vector<int> sortCharacters() {
+  vector<int> order(maxn), cnt(alphabet);
+  for (int i = 0; i < n; ++i)
+    cnt[s[i]]++;
+  for (int i = 1; i < alphabet; ++i)
+    cnt[i] += cnt[i - 1];
+  for (int i = n - 1; i >= 0; --i) {
+    int c = s[i];
+    cnt[c]--;
+    order[cnt[c]]= i;
+  }
   return order;
 }
 
+vector<int> computeCharClasses(const vector<int>& order) {
+  vector<int> classes(maxn);
+  classes[order[0]] = 0;
+  for (int i = 1; i < n; ++i) {
+    if (s[order[i]] != s[order[i - 1]])
+      classes[order[i]] = classes[order[i - 1]] + 1;
+    else
+      classes[order[i]] = classes[order[i - 1]];
+  }
+  return classes;
+}
 
-vector<int> FindOccurrences(const string& pattern, const string& text, const vector<int>& suffix_array) {
-  vector<int> result;
+vector<int> sortDoubled(int l, const vector<int>& order, const vector<int>& classes) {
+  vector<int> cnt(n), newOrder(maxn);
+  for (int i = 0; i < n; ++i)
+    cnt[classes[i]]++;
+  for (int i = 1; i < n; ++i)
+    cnt[i] += cnt[i - 1];
+  for (int i = n - 1; i >= 0; --i) {
+    int start = (order[i] - l + n) % n;
+    int c = classes[start];
+    cnt[c]--;
+    newOrder[cnt[c]] = start;
+  }
+  return newOrder;
+}
 
-  // write your code here
+vector<int> updateClasses(int l, const vector<int>& newOrder, const vector<int>& classes) {
+  vector<int> newClasses(maxn);
+  newClasses[newOrder[0]] = 0;
+  for (int i = 1; i < n; ++i) {
+    int cur = newOrder[i];
+    int prev = newOrder[i - 1];
+    int mid = (cur + l) % n;
+    int midPrev = (prev + l) % n;
+    if (classes[cur] != classes[prev] || classes[mid] != classes[midPrev])
+      newClasses[cur] = newClasses[prev] + 1;
+    else
+      newClasses[cur] = newClasses[prev];
+  }
+  return newClasses;
+}
 
-  return result;
+vector<int> buildSuffixArray() {
+  order = sortCharacters();
+  classes = computeCharClasses(order);
+  int l = 1;
+  while (l < n) {
+    order = sortDoubled(l, order, classes);
+    classes = updateClasses(l, order, classes);
+    l *= 2;
+  }
+  return order;
+}
+
+void patternMatching(char* s, char* pat, const vector<int>& suffix_array, int m) {
+  int l = 0, r = n, start, end;
+  while (l < r) {
+    int mid = (l + r) / 2;
+    int res = strncmp(pat, s + suffix_array[mid], m);
+    if (res > 0) l = mid + 1;
+    else r = mid;
+  }
+  start = l;
+  r = n;
+  while (l < r) {
+    int mid = (l + r) / 2;
+    int res = strncmp(pat, s + suffix_array[mid], m);
+    if (res < 0) r = mid;
+    else l = mid + 1;
+  }
+  end = r;
+  if (start <= end)
+    for (int i = start; i < end; ++i)
+      occurrences.insert(suffix_array[i]);
 }
 
 int main() {
-  char buffer[100001];
-  scanf("%s", buffer);
-  string text = buffer;
-  text += '$';
-  vector<int> suffix_array = BuildSuffixArray(text);
-  int pattern_count;
-  scanf("%d", &pattern_count);
-  vector<bool> occurs(text.length(), false);
-  for (int pattern_index = 0; pattern_index < pattern_count; ++pattern_index) {
-    scanf("%s", buffer);
-    string pattern = buffer;
-    vector<int> occurrences = FindOccurrences(pattern, text, suffix_array);
-    for (int j = 0; j < occurrences.size(); ++j) {
-      occurs[occurrences[j]] = true;
-    }
+  cin >> s >> m;
+  s += '$';
+  n = s.size();
+
+  vector<int> suffix_array = buildSuffixArray();
+
+  for (int i = 0; i < m; ++i) {
+    cin >> pat;
+    patternMatching(&s[0], &pat[0], suffix_array, pat.size());
   }
-  for (int i = 0; i < occurs.size(); ++i) {
-    if (occurs[i]) {
-      printf("%d ", i);
-    }
-  }
-  printf("\n");
+
+  for (auto x: occurrences)
+    cout << x << ' ';
+  cout << endl;
+
   return 0;
 }
