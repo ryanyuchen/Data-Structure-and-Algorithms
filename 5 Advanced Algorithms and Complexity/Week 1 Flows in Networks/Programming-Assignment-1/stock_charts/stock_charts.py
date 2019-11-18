@@ -1,4 +1,6 @@
 # python3
+import queue
+
 class StockCharts:
     def read_data(self):
         n, k = map(int, input().split())
@@ -15,24 +17,64 @@ class StockCharts:
         # without intersections of graphs on one chart.
         n = len(stock_data)
         k = len(stock_data[0])
-        charts = []
-        for new_stock in stock_data:
-            added = False
-            for chart in charts:
-                fits = True
-                for stock in chart:
-                    above = all([x > y for x, y in zip(new_stock, stock)])
-                    below = all([x < y for x, y in zip(new_stock, stock)])
-                    if (not above) and (not below):
-                        fits = False
-                        break
-                if fits:
-                    added = True
-                    chart.append(new_stock)
-                    break
-            if not added:
-                charts.append([new_stock])
-        return len(charts)
+        adj_matrix = [[0] * n for _ in range(n)]
+        for i in range(n):
+            for j in range(n):
+                if all([x < y for x, y in zip(stock_data[i], stock_data[j])]):
+                    adj_matrix[i][j] = 1
+        matching = [-1] * n
+        busy_right = [False] * n
+        def BFS():
+            visitedNode = set()
+            q = queue.Queue()
+            q.put((1, None))
+            visitedNode.add((1, None))
+            path = []
+            parent = dict()
+            while not q.empty():
+                currentNode = q.get()
+                if 1 == currentNode[0]:
+                    for i in range(n):
+                        if -1 == matching[i]:
+                            visitedNode.add((2, i))
+                            parent[(2, i)] = currentNode
+                            q.put((2, i))
+                elif 2 == currentNode[0]:
+                    i = currentNode[1]
+                    for j in range(n):
+                        if 1 == adj_matrix[i][j] and j != matching[i] and not (3, j) in visitedNode:
+                            visitedNode.add((3, j))
+                            parent[(3, j)] = currentNode
+                            q.put((3, j))
+                elif 3 == currentNode[0]:
+                    j = currentNode[1]
+                    if not busy_right[j]:
+                        prevNode = currentNode
+                        currentNode = (4, j)
+                        while True:
+                            path.insert(0, (prevNode, currentNode))
+                            if 1 == prevNode[0]:
+                                break
+                            currentNode = prevNode
+                            prevNode = parent[currentNode]
+                        for e in path:
+                            if 2 == e[0][0]:
+                                matching[e[0][1]] = e[1][1]
+                            elif 3 == e[0][0] and 4 == e[1][0]:
+                                busy_right[e[1][1]] = True
+                        return True
+                    else:
+                        for i in range(n):
+                            if j == matching[i] and not (2, i) in visitedNode:
+                                visitedNode.add((2, i))
+                                parent[(2, i)] = currentNode
+                                q.put((2, i))
+            return False
+        
+        while BFS():
+            continue
+        
+        return len([0 for i in matching if -1 == i])
 
     def solve(self):
         stock_data = self.read_data()
