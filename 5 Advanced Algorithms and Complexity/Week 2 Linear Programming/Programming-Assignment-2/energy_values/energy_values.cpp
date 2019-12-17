@@ -1,6 +1,7 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include <iomanip>
 
 const double EPS = 1e-6;
 const int PRECISION = 20;
@@ -53,6 +54,14 @@ Position SelectPivotElement(
         ++pivot_element.row;
     while (used_columns[pivot_element.column])
         ++pivot_element.column;
+    double max = 0.0;
+    int size = a.size();
+    for(int i = pivot_element.row; i < size; ++i){
+        if (std::fabs(a[i][pivot_element.column]) > std::fabs(max)){
+            max = a[i][pivot_element.column];
+            pivot_element.row = i;
+        }
+    }
     return pivot_element;
 }
 
@@ -63,8 +72,41 @@ void SwapLines(Matrix &a, Column &b, std::vector <bool> &used_rows, Position &pi
     pivot_element.row = pivot_element.column;
 }
 
+void BackSubstitution(Matrix& a, Column& b){
+    for (int i = a.size() - 1; i; --i){
+        double v = b[i];
+        for (int j = 0; j != i; ++j){
+            b[j] -= a[j][i] * v;
+            a[j][i] = 0;
+        }
+    }
+}
+
+inline void ScalePivot(Matrix& a, Column& b, const Position& pivot_element){
+    const double divisor = a[pivot_element.row][pivot_element.column];
+    const int size = a.size();
+    
+    for (int j = pivot_element.column; j < size; ++j){
+        a[pivot_element.row][j] /= divisor;
+    }
+    
+    b[pivot_element.row] /= divisor;
+}
+
 void ProcessPivotElement(Matrix &a, Column &b, const Position &pivot_element) {
     // Write your code here
+    const int size = a.size();
+    double multiple{0.0};
+    
+    ScalePivot(a, b, pivot_element);
+    
+    for (int i = pivot_element.row + 1; i < size; ++i){
+        multiple = a[i][pivot_element.column];
+        for (int j = pivot_element.column; j < size; ++j){
+            a[i][j] -= (a[pivot_element.row][j] * multiple);
+        }
+        b[i] -= (b[pivot_element.row] * multiple);
+    }
 }
 
 void MarkPivotElementUsed(const Position &pivot_element, std::vector <bool> &used_rows, std::vector <bool> &used_columns) {
@@ -79,12 +121,15 @@ Column SolveEquation(Equation equation) {
 
     std::vector <bool> used_columns(size, false);
     std::vector <bool> used_rows(size, false);
+    
     for (int step = 0; step < size; ++step) {
         Position pivot_element = SelectPivotElement(a, used_rows, used_columns);
         SwapLines(a, b, used_rows, pivot_element);
         ProcessPivotElement(a, b, pivot_element);
         MarkPivotElementUsed(pivot_element, used_rows, used_columns);
     }
+    
+    BackSubstitution(a, b);
 
     return b;
 }
